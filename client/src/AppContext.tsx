@@ -22,6 +22,7 @@ export type VoteStatePayload = {
 export type AppStore = {
   clientPlayerId: string;
   playerName: string | null;
+  profileImage: string | null;
   categories: CategoryMeta[];
   lobbyList: LobbySummary[];
   lobbyState: LobbyState | null;
@@ -34,6 +35,7 @@ export type AppStore = {
 
 export type AppActions = {
   setPlayerName: (name: string) => void;
+  setProfileImage: (profileImage: string | null) => void;
   clearChat: () => void;
 };
 

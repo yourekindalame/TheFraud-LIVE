@@ -48,7 +48,8 @@ export default function LobbiesPage() {
                         {
                           lobbyId: l.id, // Join public lobby by ID (no code needed)
                           playerName: store.playerName,
-                          clientPlayerId: store.clientPlayerId
+                          clientPlayerId: store.clientPlayerId,
+                          profileImage: store.profileImage
                         },
                         (resp: { ok: boolean }) => {
                           if (resp?.ok) navigate(`/lobby/${l.id}`);

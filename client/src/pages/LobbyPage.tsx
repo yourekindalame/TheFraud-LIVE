@@ -86,7 +86,8 @@ export default function LobbyPage() {
                   lobbyId: lobbyId.toUpperCase(), // Try joining by ID first (public lobby)
                   ...(lobbyCodeDraft.trim() ? { lobbyCode: lobbyCodeDraft.trim().toUpperCase() } : {}), // Include code if provided
                   playerName: store.playerName,
-                  clientPlayerId: store.clientPlayerId
+                  clientPlayerId: store.clientPlayerId,
+                  profileImage: store.profileImage
                 },
                 (resp: { ok: boolean; lobbyId?: string }) => {
                   setJoining(false);

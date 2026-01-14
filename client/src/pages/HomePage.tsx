@@ -49,7 +49,8 @@ export default function HomePage() {
             lobbyId: resp.lobbyId, // Join by ID
             ...(resp.lobbyCode ? { lobbyCode: resp.lobbyCode } : {}), // Include code if provided (private lobbies)
             playerName: store.playerName,
-            clientPlayerId: store.clientPlayerId
+            clientPlayerId: store.clientPlayerId,
+            profileImage: store.profileImage
           },
           () => {
             setBusy(false);
