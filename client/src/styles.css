@@ -454,3 +454,12 @@ textarea {
   width: 0%;
   transition: width 0.1s linear;
 }
+
+.holdBtnFill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.35), rgba(244, 63, 94, 0.35));
+  transition: width 0.1s linear, opacity 0.1s linear;
+  pointer-events: none;
+}
