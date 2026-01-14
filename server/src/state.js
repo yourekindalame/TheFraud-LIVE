@@ -95,7 +95,8 @@ function publicPlayer(p) {
     points: p.points,
     joinedAt: p.joinedAt,
     connected: p.connected,
-    profileImage: p.profileImage || null
+    profileImage: p.profileImage || null,
+    pending: Boolean(p.pending)
   };
 }
 
@@ -134,7 +135,7 @@ function ensureHostValid(lobby) {
 }
 
 function chooseFrauds(lobby) {
-  const connectedPlayers = lobby.players.filter((p) => p.connected);
+  const connectedPlayers = lobby.players.filter((p) => p.connected && !p.pending);
   const ids = connectedPlayers.map((p) => p.id);
   const shuffled = shuffle(ids);
 
@@ -162,6 +163,11 @@ function getAllCategories() {
 }
 
 function startGameRound(lobby) {
+  // Players who joined mid-round become active at the start of the next round.
+  for (const p of lobby.players) {
+    p.pending = false;
+  }
+
   // Support multiple categories - randomly select one
   const selectedCategoryIds = lobby.settings.categories || [];
   if (selectedCategoryIds.length === 0) {
@@ -220,7 +226,7 @@ function computeVoteState(lobby) {
     if (!targetId) continue;
     voteCountsByTargetId[targetId] = (voteCountsByTargetId[targetId] || 0) + 1;
   }
-  const connectedIds = lobby.players.filter((p) => p.connected).map((p) => p.id);
+  const connectedIds = lobby.players.filter((p) => p.connected && !p.pending).map((p) => p.id);
   const allSubmittedBoolean = connectedIds.every((id) => Boolean(votesByVoterId[id]));
 
   return { votesByVoterId, voteCountsByTargetId, allSubmittedBoolean };
@@ -253,7 +259,7 @@ function applyScoringAfterVote(lobby, { eliminatedPlayerId, fraudEliminated }) {
   if (fraudEliminated) {
     // Detectives eliminate The Fraud: +1 point each (non-fraud connected)
     for (const p of lobby.players) {
-      if (!p.connected) continue;
+      if (!p.connected || p.pending) continue;
       if (fraudIds.has(p.id)) continue;
       p.points += 1;
     }
@@ -263,7 +269,7 @@ function applyScoringAfterVote(lobby, { eliminatedPlayerId, fraudEliminated }) {
   // Fraud survives a vote: +1 point each surviving fraud
   for (const fraudId of fraudIds) {
     const fp = playersById.get(fraudId);
-    if (fp && fp.connected) fp.points += 1;
+    if (fp && fp.connected && !fp.pending) fp.points += 1;
   }
   return { summary: "The Fraud survived the vote. +1 point for each Fraud.", fraudEliminated: false };
 }
@@ -326,7 +332,7 @@ function createLobby({ lobbyName, isPrivate, settingsDefaults }) {
   };
 }
 
-function addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId, profileImage }) {
+function addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId, profileImage, pending }) {
   const id = String(clientPlayerId || "").trim();
   if (!id) return { ok: false, error: "Missing clientPlayerId." };
   const name = safeName(playerName);
@@ -363,7 +369,8 @@ function addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId, profil
     joinedAt: now(),
     connected: true,
     socketId,
-    profileImage: profileImageValue ?? null
+    profileImage: profileImageValue ?? null,
+    pending: Boolean(pending)
   };
   lobby.players.push(player);
   return { ok: true, player, isNew: true };
