@@ -793,11 +793,16 @@ io.on("connection", (socket) => {
       if (typeof ack === "function") ack({ ok: false, error: "Not host." });
       return;
     }
-    if (lobby.gameState.phase !== "voting") {
-      emitError(socket, "NOT_VOTING", "Voting is not active.");
-      if (typeof ack === "function") ack({ ok: false, error: "Not voting." });
+    // Allow host to skip straight to Fraud guess, even if voting hasn't started yet.
+    if (lobby.gameState.phase !== "voting" && lobby.gameState.phase !== "clues") {
+      emitError(socket, "BAD_PHASE", "You can only skip voting during an active round.");
+      if (typeof ack === "function") ack({ ok: false, error: "Bad phase." });
       return;
     }
+
+    // Ensure vote structures exist (skip can happen during clues).
+    lobby.gameState.votesByVoterId = lobby.gameState.votesByVoterId || {};
+    lobby.gameState.voteToStartVoterIds = new Set();
     finishVoting(lobby, true);
     if (typeof ack === "function") ack({ ok: true });
   });
@@ -850,7 +855,13 @@ io.on("connection", (socket) => {
       if (typeof ack === "function") ack({ ok: false, error: "Not host." });
       return;
     }
-    endRoundToLobby(lobby, "host_ended_round", null);
+    // Host "End round" should immediately start a fresh round + category.
+    if (lobby.gameState.phase === "lobby") {
+      emitError(socket, "BAD_PHASE", "Round is not active.");
+      if (typeof ack === "function") ack({ ok: false, error: "Bad phase." });
+      return;
+    }
+    startNextRound(lobby);
     if (typeof ack === "function") ack({ ok: true });
   });
 
