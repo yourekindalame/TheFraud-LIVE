@@ -304,6 +304,27 @@
       "icon": "📺",
       "boards": [
         {
+          "name": "Reality TV Chaos 📺",
+          "clues16": [
+            "Jersey Shore",
+            "Fantasy Factory",
+            "Honey Boo Boo",
+            "KUWTK",
+            "Real Housewives",
+            "Bad Girls Club",
+            "Flavor of Love",
+            "Love and Hip Hop",
+            "America's Next Top Model",
+            "The Hills",
+            "Pimp My Ride",
+            "MTV Cribs",
+            "NEXT",
+            "Teen Mom",
+            "Love Island",
+            "Dance Moms"
+          ]
+        },
+        {
           "name": "After School",
           "clues16": [
             "Ed Edd n Eddy",
