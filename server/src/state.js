@@ -2,6 +2,7 @@ const { nanoid, customAlphabet } = require("nanoid");
 const bcrypt = require("bcryptjs");
 const fs = require("node:fs");
 const path = require("node:path");
+const { randomInt } = require("node:crypto");
 
 const LOBBY_ID_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // no 0/O/1/I
 
@@ -30,14 +31,15 @@ function safeMessage(message) {
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randomInt(i + 1);
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
 
 function pickRandom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+  if (!arr || arr.length === 0) return undefined;
+  return arr[randomInt(arr.length)];
 }
 
 function readBannedWords() {
@@ -139,7 +141,7 @@ function chooseFrauds(lobby) {
   let count = clamp(Number(lobby.settings.imposterCount || 1), 1, Math.max(1, ids.length - 1));
   if (lobby.settings.randomizeImposterCount) {
     const max = Math.max(1, Math.min(3, ids.length - 1));
-    count = 1 + Math.floor(Math.random() * max);
+    count = 1 + randomInt(max);
   }
   return new Set(shuffled.slice(0, count));
 }
@@ -191,7 +193,7 @@ function startGameRound(lobby) {
   
   const board = pickRandom(category.boards);
   const clueBoard16 = board.clues16;
-  const secretIndex = Math.floor(Math.random() * 16);
+  const secretIndex = randomInt(16);
   const fraudIds = chooseFrauds(lobby);
 
   lobby.gameState = {
