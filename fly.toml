@@ -12,9 +12,6 @@ primary_region = 'iad'
   source = "thefraudlive_data"
   destination = "/data"
 
-[mounts]
-  source = "thefraud-live_data"
-  destination = "/data"
 
 [http_service]
   internal_port = 8080
