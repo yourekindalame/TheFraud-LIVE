@@ -1,64 +1,115 @@
 {
   "categories": [
     {
+      "id": "popculture",
+      "name": "Pop Culture",
+      "icon": "🔥",
+      "boards": [
+        {
+          "name": "Internet & Culture Moments",
+          "clues16": [
+            "Harambe",
+            "January 6",
+            "Charlie Kirk",
+            "NPC",
+            "Tralalero Tralala",
+            "Rickroll",
+            "Cash Me Outside",
+            "6 7",
+            "SYBAU",
+            "Minin or Da Bob",
+            "Burger King Foot Lettuce",
+            "Amogus",
+            "Donald Trump",
+            "Ohio",
+            "Sus",
+            "Skibidi Toilet"
+          ]
+        },
+
+      {
+        "name": "You Had to Be There",
+        "clues16": [
+          "SDIYBT",
+          "OceanGate",
+          "Queen Elizabeth Death",
+          "P Diddy",
+          "The Rizzler",
+          "Costco Guys",
+          "DJ Khaled",
+          "Barbenheimer",
+          "Super Bowl",
+          "Ellen DeGeneres",
+          "Britney Spears",
+          "The Kardashians",
+          "Kai Cenat",
+          "Epstein",
+          "Nicki Minaj",
+          "21 Savage"
+        ]
+      }
+      ]
+    },
+
+    {
       "id": "cities",
-      "name": "Cities 🏙️",
+      "name": "Cities",
       "icon": "🏙️",
       "boards": [
         {
           "name": "Urban Legends",
           "clues16": [
-            "Skyscraper",
-            "Subway",
-            "Downtown",
-            "Traffic",
-            "Nightlife",
-            "Landmark",
-            "Bridge",
-            "Skyline",
-            "Tourist",
-            "Neighborhood",
-            "Rush hour",
-            "Street food",
-            "Plaza",
-            "District",
-            "Waterfront",
-            "Metropolis"
+            "New York City",
+            "Los Angeles",
+            "London",
+            "Paris",
+            "Tokyo",
+            "Dubai",
+            "Rome",
+            "Barcelona",
+            "Berlin",
+            "Toronto",
+            "Mexico City",
+            "Rio de Janeiro",
+            "Sydney",
+            "Cape Town",
+            "Seoul",
+            "Mumbai"
           ]
         }
       ]
     },
     {
       "id": "countries",
-      "name": "Countries 🌍",
+      "name": "Countries",
       "icon": "🌍",
       "boards": [
         {
           "name": "World Tour",
           "clues16": [
-            "Capital",
-            "Border",
-            "Flag",
-            "Currency",
-            "Language",
-            "Passport",
-            "Visa",
-            "Embassy",
-            "Continent",
-            "Culture",
-            "Tradition",
-            "Population",
-            "Cuisine",
-            "Climate",
-            "National anthem",
-            "Independence"
+            "United States",
+            "Canada",
+            "Mexico",
+            "Brazil",
+            "United Kingdom",
+            "France",
+            "Germany",
+            "Italy",
+            "Spain",
+            "Japan",
+            "China",
+            "South Korea",
+            "India",
+            "Australia",
+            "Nigeria",
+            "South Africa"
           ]
         }
       ]
     },
     {
       "id": "hobbies",
-      "name": "Hobbies & Activities 🎯",
+      "name": "Hobbies & Activities",
       "icon": "🎯",
       "boards": [
         {
@@ -86,7 +137,7 @@
     },
     {
       "id": "memes",
-      "name": "Memes 😂",
+      "name": "Memes",
       "icon": "😂",
       "boards": [
         {
@@ -114,7 +165,7 @@
     },
     {
       "id": "music",
-      "name": "Music Artists 🎵",
+      "name": "Music Artists",
       "icon": "🎵",
       "boards": [
         {
@@ -137,12 +188,35 @@
             "Post Malone",
             "Future"
           ]
+        },
+
+        {
+          "name": "Modern Rap Era 🎤",
+          "clues16": [
+            "Cardi B",
+            "Megan Thee Stallion",
+            "Lil Baby",
+            "DaBaby",
+            "21 Savage",
+            "Playboi Carti",
+            "Lil Uzi Vert",
+            "Young Thug",
+            "Gunna",
+            "A$AP Rocky",
+            "Tyler The Creator",
+            "Chance the Rapper",
+            "Mac Miller",
+            "Juice WRLD",
+            "XXXTENTACION",
+            "Pop Smoke"
+          ]
         }
+
       ]
     },
     {
       "id": "superpowers",
-      "name": "Superpowers ⚡",
+      "name": "Superpowers",
       "icon": "⚡",
       "boards": [
         {
@@ -170,7 +244,7 @@
     },
     {
       "id": "comics",
-      "name": "Marvel / DC 🦸",
+      "name": "Marvel / DC",
       "icon": "🦸",
       "boards": [
         {
@@ -198,7 +272,7 @@
     },
     {
       "id": "anime",
-      "name": "Anime 🍥",
+      "name": "Anime",
       "icon": "🍥",
       "boards": [
         {
@@ -226,7 +300,7 @@
     },
     {
       "id": "tv",
-      "name": "TV Shows 📺",
+      "name": "TV Shows",
       "icon": "📺",
       "boards": [
         {
@@ -236,25 +310,91 @@
             "Teen Titans",
             "Dexters Lab",
             "Powerpuff Girls",
-            "Courage",
+            "Fairly Odd Parents",
             "Kim Possible",
             "Thats So Raven",
-            "Regular Show",
+            "Chowder",
             "Adventure Time",
             "Samurai Jack",
-            "Futurama",
-            "Family Guy",
+            "iCarly",
+            "Phineas and Ferb",
             "SpongeBob",
             "Yu-Gi-Oh!",
             "Pokémon",
-            "The Boondocks"
+            "Suite Life"
+          ]
+        },
+
+        {
+          "name": "Saturday Morning 📺",
+          "clues16": [
+            "Courage the Cowardly Dog",
+            "Johnny Bravo",
+            "Recess",
+            "Hey Arnold!",
+            "CatDog",
+            "Rugrats",
+            "Danny Phantom",
+            "Avatar",
+            "Ben 10",
+            "Codename Kids Next Door",
+            "Rocket Power",
+            "Totally Spies",
+            "Billy and Mandy",
+            "Looney Tunes",
+            "Scooby-Doo",
+            "TMNT"
+          ]
+        },
+
+        {
+          "name": "Must-Watch TV 📺",
+          "clues16": [
+            "Breaking Bad",
+            "The Office",
+            "Parks and Recreation",
+            "Family Feud",
+            "Game of Thrones",
+            "Stranger Things",
+            "Jeopardy",
+            "American Idol",
+            "Survivor",
+            "Judge Judy",
+            "Jerry Springer",
+            "How I Met Your Mother",
+            "Deal or No Deal",
+            "Wheel of Fortune",
+            "The Walking Dead",
+            "Saturday Night Live"
+          ]
+        },
+
+        {
+          "name": "Adult Animation 🍻",
+          "clues16": [
+            "Rick and Morty",
+            "Family Guy",
+            "The Simpsons",
+            "South Park",
+            "American Dad",
+            "Futurama",
+            "King of the Hill",
+            "The Boondocks",
+            "Archer",
+            "Robot Chicken",
+            "Aqua Teen Hunger Force",
+            "The Boondocks",
+            "Smiling Friends",
+            "Primal",
+            "Samurai Jack",
+            "Bob's Burgers"
           ]
         }
       ]
     },
     {
       "id": "movies",
-      "name": "Movies 🎬",
+      "name": "Movies",
       "icon": "🎬",
       "boards": [
         {
@@ -277,40 +417,85 @@
             "Toy Story",
             "Gladiator"
           ]
+        },
+
+        {
+          "name": "Cult Classics & Crowd Favorites",
+          "clues16": [
+            "Titanic",
+            "Jurassic Park",
+            "Star Wars",
+            "Harry Potter",
+            "Lord of the Rings",
+            "The Godfather",
+            "Pulp Fiction",
+            "Fight Club",
+            "Forrest Gump",
+            "The Shawshank Redemption",
+            "Back to the Future",
+            "Indiana Jones",
+            "Ghostbusters",
+            "Home Alone",
+            "The Lion King",
+            "Terminator"
+          ]
+        },
+
+        {
+          "name": "Black Cinema 🎬✊🏾",
+          "clues16": [
+            "Friday",
+            "Boyz n the Hood",
+            "Menace II Society",
+            "Set It Off",
+            "Love & Basketball",
+            "The Best Man",
+            "Coming to America",
+            "Paid in Full",
+            "New Jack City",
+            "Juice",
+            "Poetic Justice",
+            "Get Rich or Die Tryin",
+            "Belly",
+            "Waiting to Exhale",
+            "Straight Outta Compton",
+            "The Wood"
+          ]
         }
+
       ]
     },
     {
       "id": "vehicles",
-      "name": "Vehicles 🚗",
+      "name": "Vehicles",
       "icon": "🚗",
       "boards": [
         {
           "name": "Garage",
           "clues16": [
-            "Sedan",
-            "SUV",
-            "Pickup",
-            "Motorcycle",
-            "Supercar",
-            "Electric",
-            "Hybrid",
-            "Convertible",
-            "Coupe",
-            "Off-road",
-            "Luxury",
-            "Sports",
-            "Manual",
-            "Automatic",
-            "Rims",
-            "Spoiler"
+            "Toyota",
+            "Honda",
+            "Hyundai",
+            "BMW",
+            "Mercedes-Benz",
+            "Audi",
+            "Ford",
+            "Chevrolet",
+            "Nissan",
+            "Kia",
+            "Volkswagen",
+            "Tesla",
+            "Lexus",
+            "Acura",
+            "Jeep",
+            "Porsche"
           ]
         }
       ]
     },
     {
       "id": "brands",
-      "name": "Brands 🏷️",
+      "name": "Brands",
       "icon": "🏷️",
       "boards": [
         {
@@ -331,14 +516,14 @@
             "McDonalds",
             "Netflix",
             "Spotify",
-            "Supreme"
+            "Discord"
           ]
         }
       ]
     },
     {
       "id": "professions",
-      "name": "Professions 💼",
+      "name": "Professions",
       "icon": "💼",
       "boards": [
         {
@@ -366,7 +551,7 @@
     },
     {
       "id": "sports",
-      "name": "Sports 🏀",
+      "name": "Sports",
       "icon": "🏀",
       "boards": [
         {
@@ -389,12 +574,35 @@
             "Super Bowl",
             "MVP"
           ]
+        },
+
+        {
+          "name": "Athletes",
+          "clues16": [
+            "LeBron James",
+            "Michael Jordan",
+            "Kobe Bryant",
+            "Steph Curry",
+            "Kevin Durant",
+            "Tom Brady",
+            "Patrick Mahomes",
+            "Lionel Messi",
+            "Cristiano Ronaldo",
+            "Serena Williams",
+            "Tiger Woods",
+            "Usain Bolt",
+            "Muhammad Ali",
+            "Mike Tyson",
+            "Shaquille ONeal",
+            "Simone Biles"
+          ]
         }
+
       ]
     },
     {
       "id": "objects",
-      "name": "Objects 📦",
+      "name": "Objects",
       "icon": "📦",
       "boards": [
         {
@@ -422,35 +630,35 @@
     },
     {
       "id": "food",
-      "name": "Food 🍔",
+      "name": "Food",
       "icon": "🍔",
       "boards": [
         {
           "name": "Late Night Eats",
           "clues16": [
-            "Pizza",
-            "Burger",
-            "Tacos",
-            "Pasta",
-            "Fried chicken",
+            "McDonalds",
+            "Wendys",
+            "Burger King",
+            "Chick-fil-A",
+            "Chipotle",
+            "Taco Bell",
+            "Big Mac",
+            "4 for 4",
+            "Whopper",
+            "Chicken Nuggets",
+            "Crunchwrap",
+            "Burrito Bowl",
+            "Frosty",
+            "Happy Meal",
             "Fries",
-            "Ramen",
-            "Sushi",
-            "Steak",
-            "Ice cream",
-            "Donuts",
-            "Wings",
-            "Sandwich",
-            "BBQ",
-            "Rice",
-            "Dessert"
+            "Baja Blast"
           ]
         }
       ]
     },
     {
       "id": "videogames",
-      "name": "Video Games 🎮",
+      "name": "Video Games",
       "icon": "🎮",
       "boards": [
         {
@@ -464,9 +672,9 @@
             "Fortnite",
             "Minecraft",
             "Halo",
-            "Mario Kart",
+            "Mario Party",
             "Smash Bros",
-            "Need for Speed",
+            "Midnight Club",
             "God of War",
             "Resident Evil",
             "Final Fantasy",
