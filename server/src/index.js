@@ -7,6 +7,7 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 const { nanoid } = require("nanoid");
 const bcrypt = require("bcryptjs");
+const fs = require("node:fs");
 
 const {
   getAllCategories,
@@ -28,9 +29,11 @@ const {
 
 const PORT = Number(process.env.PORT || 8080);
 const NODE_ENV = process.env.NODE_ENV || "development";
+const DATA_DIR = process.env.DATA_DIR || "/data";
+const AVATARS_DIR = path.join(DATA_DIR, "avatars");
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "3mb" }));
 
 // In production, everything is same-origin. In dev, Vite runs separately.
 app.use(
@@ -48,7 +51,116 @@ app.get("/api/meta", (_req, res) => {
   res.json({ ok: true, categories: getAllCategories(), defaults: defaultSettings() });
 });
 
-const fs = require("node:fs");
+function ensureDirSync(dirPath) {
+  try {
+    fs.mkdirSync(dirPath, { recursive: true });
+  } catch {
+    // ignore
+  }
+}
+
+ensureDirSync(AVATARS_DIR);
+
+function sanitizePlayerId(raw) {
+  const id = String(raw || "").trim();
+  if (!id) return null;
+  // Allow UUIDs and simple ids, but avoid path traversal
+  if (!/^[a-zA-Z0-9._-]{1,80}$/.test(id)) return null;
+  return id;
+}
+
+function avatarPaths(playerId) {
+  const safeId = sanitizePlayerId(playerId);
+  if (!safeId) return null;
+  return {
+    safeId,
+    binPath: path.join(AVATARS_DIR, `${safeId}.bin`),
+    metaPath: path.join(AVATARS_DIR, `${safeId}.json`)
+  };
+}
+
+function getAvatarUrlForPlayerId(playerId) {
+  const paths = avatarPaths(playerId);
+  if (!paths) return null;
+  try {
+    if (!fs.existsSync(paths.binPath) || !fs.existsSync(paths.metaPath)) return null;
+    const meta = JSON.parse(fs.readFileSync(paths.metaPath, "utf8"));
+    const v = meta && typeof meta.updatedAt === "number" ? meta.updatedAt : null;
+    return v ? `/avatars/${paths.safeId}?v=${v}` : `/avatars/${paths.safeId}`;
+  } catch {
+    return null;
+  }
+}
+
+function parseImageDataUrl(dataUrl) {
+  if (typeof dataUrl !== "string") return null;
+  const m = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
+  if (!m) return null;
+  const mime = m[1];
+  const b64 = m[2] || "";
+  if (!mime.startsWith("image/")) return null;
+  // Basic size check (base64 chars)
+  if (dataUrl.length > 2_000_000) return null;
+  let buf = null;
+  try {
+    buf = Buffer.from(b64, "base64");
+  } catch {
+    return null;
+  }
+  // Hard limit 1.5MB decoded
+  if (!buf || buf.length === 0 || buf.length > 1_500_000) return null;
+  return { mime, buf };
+}
+
+app.get("/avatars/:playerId", (req, res) => {
+  const safeId = sanitizePlayerId(req.params.playerId);
+  const paths = avatarPaths(safeId);
+  if (!paths) return res.status(400).send("Bad player id");
+  try {
+    if (!fs.existsSync(paths.binPath) || !fs.existsSync(paths.metaPath)) return res.status(404).send("Not found");
+    const meta = JSON.parse(fs.readFileSync(paths.metaPath, "utf8"));
+    const mime = meta && typeof meta.mime === "string" ? meta.mime : "application/octet-stream";
+    res.setHeader("Content-Type", mime);
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    return res.sendFile(paths.binPath);
+  } catch {
+    return res.status(500).send("Failed");
+  }
+});
+
+app.post("/api/avatar", (req, res) => {
+  const { clientPlayerId, imageDataUrl } = req.body || {};
+  const safeId = sanitizePlayerId(clientPlayerId);
+  if (!safeId) return res.status(400).json({ ok: false, error: "Missing/invalid clientPlayerId." });
+
+  const paths = avatarPaths(safeId);
+  if (!paths) return res.status(400).json({ ok: false, error: "Invalid player id." });
+
+  // Clear avatar
+  if (imageDataUrl === null) {
+    try {
+      if (fs.existsSync(paths.binPath)) fs.unlinkSync(paths.binPath);
+      if (fs.existsSync(paths.metaPath)) fs.unlinkSync(paths.metaPath);
+    } catch {
+      // ignore
+    }
+    return res.json({ ok: true, url: null });
+  }
+
+  const parsed = parseImageDataUrl(imageDataUrl);
+  if (!parsed) return res.status(400).json({ ok: false, error: "Invalid image. Please upload a smaller image file." });
+
+  const updatedAt = Date.now();
+  try {
+    ensureDirSync(AVATARS_DIR);
+    fs.writeFileSync(paths.binPath, parsed.buf);
+    fs.writeFileSync(paths.metaPath, JSON.stringify({ mime: parsed.mime, updatedAt }, null, 2));
+    return res.json({ ok: true, url: `/avatars/${safeId}?v=${updatedAt}` });
+  } catch {
+    return res.status(500).json({ ok: false, error: "Failed to save avatar." });
+  }
+});
+
 const publicDir = path.join(__dirname, "..", "public");
 app.use(express.static(publicDir));
 app.get("*", (_req, res) => {
@@ -384,7 +496,10 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const added = addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId: socket.id, profileImage });
+    // Prefer persisted avatar on disk (Fly volume), fallback to client-provided value.
+    const storedAvatarUrl = getAvatarUrlForPlayerId(clientPlayerId);
+    const effectiveProfileImage = storedAvatarUrl || profileImage;
+    const added = addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId: socket.id, profileImage: effectiveProfileImage });
     if (!added.ok) {
       emitError(socket, "BAD_JOIN", added.error);
       if (typeof ack === "function") ack({ ok: false, error: added.error });
@@ -415,20 +530,22 @@ io.on("connection", (socket) => {
     }
     const { lobby, membership } = ctx;
     const { profileImage } = payload || {};
-    
-    // Validate and limit profile image size
-    let profileImageValue = null;
-    if (profileImage && typeof profileImage === "string") {
-      if (profileImage.length < 1000000) { // 1MB limit
-        profileImageValue = profileImage;
-      }
+
+    // If no explicit profileImage provided, refresh from persisted avatar on disk.
+    /** @type {string | null | undefined} */
+    let profileImageValue = undefined;
+    if (profileImage === undefined) {
+      profileImageValue = getAvatarUrlForPlayerId(membership.playerId);
+    } else if (typeof profileImage === "string") {
+      // Either a URL or (legacy) data URL; keep existing 1MB limit.
+      if (profileImage.length < 1000000) profileImageValue = profileImage;
     } else if (profileImage === null) {
       profileImageValue = null; // Allow clearing profile image
     }
     
     const player = lobby.players.find((p) => p.id === membership.playerId);
     if (player) {
-      player.profileImage = profileImageValue;
+      if (profileImageValue !== undefined) player.profileImage = profileImageValue;
       emitLobbyState(lobby);
       if (typeof ack === "function") ack({ ok: true });
     } else {
@@ -676,11 +793,16 @@ io.on("connection", (socket) => {
       if (typeof ack === "function") ack({ ok: false, error: "Not host." });
       return;
     }
-    if (lobby.gameState.phase !== "voting") {
-      emitError(socket, "NOT_VOTING", "Voting is not active.");
-      if (typeof ack === "function") ack({ ok: false, error: "Not voting." });
+    // Allow host to skip straight to Fraud guess, even if voting hasn't started yet.
+    if (lobby.gameState.phase !== "voting" && lobby.gameState.phase !== "clues") {
+      emitError(socket, "BAD_PHASE", "You can only skip voting during an active round.");
+      if (typeof ack === "function") ack({ ok: false, error: "Bad phase." });
       return;
     }
+
+    // Ensure vote structures exist (skip can happen during clues).
+    lobby.gameState.votesByVoterId = lobby.gameState.votesByVoterId || {};
+    lobby.gameState.voteToStartVoterIds = new Set();
     finishVoting(lobby, true);
     if (typeof ack === "function") ack({ ok: true });
   });
@@ -733,7 +855,13 @@ io.on("connection", (socket) => {
       if (typeof ack === "function") ack({ ok: false, error: "Not host." });
       return;
     }
-    endRoundToLobby(lobby, "host_ended_round", null);
+    // Host "End round" should immediately start a fresh round + category.
+    if (lobby.gameState.phase === "lobby") {
+      emitError(socket, "BAD_PHASE", "Round is not active.");
+      if (typeof ack === "function") ack({ ok: false, error: "Bad phase." });
+      return;
+    }
+    startNextRound(lobby);
     if (typeof ack === "function") ack({ ok: true });
   });
 

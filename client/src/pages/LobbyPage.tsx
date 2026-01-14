@@ -86,7 +86,8 @@ export default function LobbyPage() {
                   lobbyId: lobbyId.toUpperCase(), // Try joining by ID first (public lobby)
                   ...(lobbyCodeDraft.trim() ? { lobbyCode: lobbyCodeDraft.trim().toUpperCase() } : {}), // Include code if provided
                   playerName: store.playerName,
-                  clientPlayerId: store.clientPlayerId
+                  clientPlayerId: store.clientPlayerId,
+                  profileImage: store.profileImage
                 },
                 (resp: { ok: boolean; lobbyId?: string }) => {
                   setJoining(false);
@@ -795,8 +796,13 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
             </div>
             <div className="row" style={{ gap: 8 }}>
               <button className="btn btnPrimary" onClick={() => socket.emit("VOTE_TO_START_VOTING", { lobbyId })}>
-                Vote to Start Voting
+                Start Voting
               </button>
+              {isHost && (
+                <HoldButton className="btn btnDanger" seconds={3} onConfirm={() => socket.emit("VOTING_END_EARLY", { lobbyId })}>
+                  End voting early (hold 3s)
+                </HoldButton>
+              )}
               <div className="muted" style={{ fontSize: 12, display: "flex", alignItems: "center" }}>
                 {store.voteState?.voteToStartCount || 0} / {store.voteState?.voteToStartRequired || Math.ceil(players.length * 0.5)} votes
               </div>

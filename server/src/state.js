@@ -330,13 +330,17 @@ function addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId, profil
   const name = safeName(playerName);
   if (!name) return { ok: false, error: "Missing player name." };
   
-  // Validate and limit profile image size (data URLs can be large)
-  let profileImageValue = null;
-  if (profileImage && typeof profileImage === "string") {
+  // Validate and limit profile image size (data URLs can be large).
+  // Important: "missing profileImage" should NOT overwrite an existing one.
+  /** @type {string | null | undefined} */
+  let profileImageValue = undefined;
+  if (typeof profileImage === "string") {
     // Limit to 1MB (roughly 1,000,000 characters for base64)
     if (profileImage.length < 1000000) {
       profileImageValue = profileImage;
     }
+  } else if (profileImage === null) {
+    profileImageValue = null; // Allow clearing profile image
   }
 
   const existing = lobby.players.find((p) => p.id === id);
@@ -357,7 +361,7 @@ function addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId, profil
     joinedAt: now(),
     connected: true,
     socketId,
-    profileImage: profileImageValue
+    profileImage: profileImageValue ?? null
   };
   lobby.players.push(player);
   return { ok: true, player, isNew: true };

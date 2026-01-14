@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Route, Routes, useNavigate } from "react-router-dom";
 import { getSocket } from "./lib/socket";
-import { getClientPlayerId, getPlayerName, getProfileImage, setPlayerName as persistName, setProfileImage } from "./lib/storage";
+import { getClientPlayerId, getPlayerName, getProfileImage, setPlayerName as persistName, setProfileImage as persistProfileImage } from "./lib/storage";
 import type { CategoryMeta, ChatMessage, LeaderboardEntry, LobbyState, LobbySummary } from "./lib/types";
 import { AppContext, type GameStartedPayload, type VoteStatePayload } from "./AppContext";
 import { RulesModal } from "./components/RulesModal";
@@ -19,6 +19,7 @@ export default function App() {
 
   const [playerName, setPlayerNameState] = useState<string | null>(() => getPlayerName());
   const [profileImage, setProfileImageState] = useState<string | null>(() => getProfileImage());
+  const didMigrateAvatarRef = useRef(false);
   const [categories, setCategories] = useState<CategoryMeta[]>([]);
   const [lobbyList, setLobbyList] = useState<LobbySummary[]>([]);
   const [lobbyState, setLobbyState] = useState<LobbyState | null>(null);
@@ -32,15 +33,48 @@ export default function App() {
   const [nameDraft, setNameDraft] = useState(playerName || "");
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
-  const store = { clientPlayerId, playerName, categories, lobbyList, lobbyState, gameStarted, voteState, chat, leaderboard, lastError };
+  const store = { clientPlayerId, playerName, profileImage, categories, lobbyList, lobbyState, gameStarted, voteState, chat, leaderboard, lastError };
   const actions = {
     setPlayerName: (name: string) => {
       const v = name.trim().slice(0, 24);
       persistName(v);
       setPlayerNameState(v);
     },
+    setProfileImage: (next: string | null) => {
+      persistProfileImage(next);
+      setProfileImageState(next);
+    },
     clearChat: () => setChat([])
   };
+
+  async function uploadAvatarFromDataUrl(dataUrl: string): Promise<string | null> {
+    try {
+      const res = await fetch("/api/avatar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientPlayerId, imageDataUrl: dataUrl })
+      });
+      const json = (await res.json()) as { ok: boolean; url?: string | null };
+      if (!json?.ok) return null;
+      return typeof json.url === "string" ? json.url : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function clearAvatarOnServer(): Promise<boolean> {
+    try {
+      const res = await fetch("/api/avatar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientPlayerId, imageDataUrl: null })
+      });
+      const json = (await res.json()) as { ok: boolean };
+      return Boolean(json?.ok);
+    } catch {
+      return false;
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -53,6 +87,21 @@ export default function App() {
       }
     })();
   }, []);
+
+  // Migrate legacy localStorage data URLs -> persisted avatar on server (/data volume).
+  useEffect(() => {
+    if (didMigrateAvatarRef.current) return;
+    didMigrateAvatarRef.current = true;
+    if (!profileImage) return;
+    if (!profileImage.startsWith("data:image/")) return;
+    (async () => {
+      const url = await uploadAvatarFromDataUrl(profileImage);
+      if (!url) return;
+      actions.setProfileImage(url);
+      socket.emit("PROFILE_UPDATE", { profileImage: url });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientPlayerId, socket]);
 
   useEffect(() => {
     const onLobbyList = (payload: { lobbies: LobbySummary[] }) => setLobbyList(payload.lobbies || []);
@@ -215,8 +264,17 @@ export default function App() {
                           reader.onload = (event) => {
                             const dataUrl = event.target?.result as string;
                             if (dataUrl) {
-                              setProfileImage(dataUrl);
-                              setProfileImageState(dataUrl);
+                              (async () => {
+                                const url = await uploadAvatarFromDataUrl(dataUrl);
+                                if (url) {
+                                  actions.setProfileImage(url);
+                                  socket.emit("PROFILE_UPDATE", { profileImage: url });
+                                } else {
+                                  // Fallback (local-only) if server upload fails
+                                  actions.setProfileImage(dataUrl);
+                                  socket.emit("PROFILE_UPDATE", { profileImage: dataUrl });
+                                }
+                              })();
                             }
                           };
                           reader.readAsDataURL(file);
@@ -241,8 +299,16 @@ export default function App() {
                         marginTop: 4
                       }}
                       onClick={() => {
-                        setProfileImage(null);
-                        setProfileImageState(null);
+                        (async () => {
+                          const ok = await clearAvatarOnServer();
+                          if (ok) {
+                            actions.setProfileImage(null);
+                            socket.emit("PROFILE_UPDATE", { profileImage: null });
+                          } else {
+                            actions.setProfileImage(null);
+                            socket.emit("PROFILE_UPDATE", { profileImage: null });
+                          }
+                        })();
                         setProfileDropdownOpen(false);
                       }}
                     >
