@@ -468,6 +468,7 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
   const { store } = useApp();
   const socket = useMemo(() => getSocket(), []);
   const phase = store.lobbyState?.gameState?.phase || "clues";
+  const voteReveal = store.voteReveal?.lobbyId === lobbyId ? store.voteReveal : null;
 
   const started = store.gameStarted;
   const [fraudGuessIndex, setFraudGuessIndex] = useState<number | null>(null);
@@ -487,6 +488,14 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
   const me = players.find((p) => p.id === store.clientPlayerId);
   const votedFor = store.voteState?.votesByVoterId?.[store.clientPlayerId] || "";
   const anonymousVoting = store.lobbyState?.settings.anonymousVoting || false;
+  const fraudNames = voteReveal
+    ? voteReveal.fraudIds
+        .map((id) => players.find((p) => p.id === id)?.name || id)
+        .filter(Boolean)
+    : [];
+  const eliminatedName = voteReveal?.resultsSummary.eliminatedPlayerId
+    ? players.find((p) => p.id === voteReveal.resultsSummary.eliminatedPlayerId)?.name || voteReveal.resultsSummary.eliminatedPlayerId
+    : null;
 
   // Reset role reveal when round changes
   useEffect(() => {
@@ -658,6 +667,28 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
 
   return (
     <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
+      {phase === "fraud_guess" && voteReveal && (
+        <div className="panel panelPad" style={{ background: "rgba(255,255,255,0.04)" }}>
+          <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8 }}>Voting result</div>
+          <div className="muted" style={{ marginBottom: 8 }}>
+            {voteReveal.resultsSummary.fraudEliminated
+              ? `Detectives voted correctly${eliminatedName ? ` and eliminated ${eliminatedName}.` : "."}`
+              : eliminatedName
+                ? `Detectives voted incorrectly and eliminated ${eliminatedName}.`
+                : "No one was eliminated."}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <span className="pill">
+              <span className="muted">Fraud:</span>{" "}
+              <strong>{fraudNames.length ? fraudNames.join(", ") : "—"}</strong>
+            </span>
+            <span className="pill">
+              <span className="muted">Summary:</span> <strong>{voteReveal.resultsSummary.summary}</strong>
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="panel panelPad" style={{ background: "rgba(255,255,255,0.04)" }}>
         <div className="row" style={{ justifyContent: "space-between" }}>
           <div>
@@ -994,7 +1025,20 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
       {phase === "fraud_guess" && isDetective && !fraudGuessResult && (
         <div className="panel panelPad" style={{ background: "rgba(255,255,255,0.04)" }}>
           <div style={{ fontWeight: 900, fontSize: 20, marginBottom: 12 }}>Final Guess</div>
-          <div className="muted">Detectives wait while The Fraud makes their final guess…</div>
+          <div className="muted" style={{ marginBottom: 10 }}>
+            {voteReveal
+              ? voteReveal.resultsSummary.fraudEliminated
+                ? `Detectives voted correctly${eliminatedName ? ` and eliminated ${eliminatedName}.` : "."}`
+                : eliminatedName
+                  ? `Detectives voted incorrectly and eliminated ${eliminatedName}.`
+                  : "No one was eliminated."
+              : "Detectives wait while The Fraud makes their final guess…"}
+          </div>
+          {voteReveal && (
+            <div className="pill">
+              <span className="muted">Fraud:</span> <strong>{fraudNames.length ? fraudNames.join(", ") : "—"}</strong>
+            </div>
+          )}
         </div>
       )}
 
