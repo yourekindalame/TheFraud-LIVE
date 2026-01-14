@@ -1,29 +1,421 @@
 {
   "categories": [
     {
+      "id": "cities",
+      "name": "Cities 🏙️",
+      "icon": "🏙️",
+      "boards": [
+        {
+          "name": "Urban Legends",
+          "clues16": [
+            "Skyscraper",
+            "Subway",
+            "Downtown",
+            "Traffic",
+            "Nightlife",
+            "Landmark",
+            "Bridge",
+            "Skyline",
+            "Tourist",
+            "Neighborhood",
+            "Rush hour",
+            "Street food",
+            "Plaza",
+            "District",
+            "Waterfront",
+            "Metropolis"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "countries",
+      "name": "Countries 🌍",
+      "icon": "🌍",
+      "boards": [
+        {
+          "name": "World Tour",
+          "clues16": [
+            "Capital",
+            "Border",
+            "Flag",
+            "Currency",
+            "Language",
+            "Passport",
+            "Visa",
+            "Embassy",
+            "Continent",
+            "Culture",
+            "Tradition",
+            "Population",
+            "Cuisine",
+            "Climate",
+            "National anthem",
+            "Independence"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hobbies",
+      "name": "Hobbies & Activities 🎯",
+      "icon": "🎯",
+      "boards": [
+        {
+          "name": "Weekend Plans",
+          "clues16": [
+            "Gaming",
+            "Streaming",
+            "Photography",
+            "Cooking",
+            "Hiking",
+            "Painting",
+            "Writing",
+            "Dancing",
+            "Yoga",
+            "Skateboarding",
+            "Collecting",
+            "DIY",
+            "Gardening",
+            "Cycling",
+            "Meditation",
+            "Fishing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "memes",
+      "name": "Memes 😂",
+      "icon": "😂",
+      "boards": [
+        {
+          "name": "Internet Culture",
+          "clues16": [
+          "Side eye",
+          "Bombastic",
+          "Aint no way",
+          "You good?",
+          "Why is it spicy?",
+          "Its the ___ for me",
+          "Oh thats not…",
+          "I beg your pardon",
+          "This is sending me",
+          "Not me ___",
+          "Hello??",
+          "HUH",
+          "Be so fr",
+          "I fear",
+          "Im crying",
+          "Absolutely not"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "music",
+      "name": "Music Artists 🎵",
+      "icon": "🎵",
+      "boards": [
+        {
+          "name": "On Repeat",
+          "clues16": [
+            "Drake",
+            "Kanye",
+            "Jay-Z",
+            "Beyoncé",
+            "Rihanna",
+            "Eminem",
+            "Nicki Minaj",
+            "Lil Wayne",
+            "Kendrick Lamar",
+            "J. Cole",
+            "Travis Scott",
+            "Doja Cat",
+            "The Weeknd",
+            "SZA",
+            "Post Malone",
+            "Future"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "superpowers",
+      "name": "Superpowers ⚡",
+      "icon": "⚡",
+      "boards": [
+        {
+          "name": "Ultimate Abilities",
+          "clues16": [
+            "Flight",
+            "Invisibility",
+            "Super strength",
+            "Telepathy",
+            "Time travel",
+            "Teleportation",
+            "Mind control",
+            "Healing",
+            "Shape-shifting",
+            "Laser vision",
+            "Super speed",
+            "Immortality",
+            "Elemental control",
+            "Telekinesis",
+            "Invincibility",
+            "Energy blast"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "comics",
+      "name": "Marvel / DC 🦸",
+      "icon": "🦸",
+      "boards": [
+        {
+          "name": "Hero Files",
+          "clues16": [
+            "Spider-Man",
+            "Batman",
+            "Iron Man",
+            "Joker",
+            "Thor",
+            "Superman",
+            "Wolverine",
+            "Deadpool",
+            "Flash",
+            "Black Panther",
+            "Wonder Woman",
+            "Loki",
+            "Green Lantern",
+            "Thanos",
+            "Doctor Strange",
+            "Harley Quinn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "anime",
+      "name": "Anime 🍥",
+      "icon": "🍥",
+      "boards": [
+        {
+          "name": "Otaku Mode",
+          "clues16": [
+            "Naruto",
+            "Dragon Ball",
+            "One Piece",
+            "Attack on Titan",
+            "Demon Slayer",
+            "Bleach",
+            "My Hero Academia",
+            "Death Note",
+            "Jujutsu Kaisen",
+            "Fullmetal Alchemist",
+            "Pokémon",
+            "Yu-Gi-Oh!",
+            "Hunter x Hunter",
+            "Sailor Moon",
+            "Tokyo Ghoul",
+            "One Punch Man"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tv",
+      "name": "TV Shows 📺",
+      "icon": "📺",
+      "boards": [
+        {
+          "name": "After School",
+          "clues16": [
+            "Ed Edd n Eddy",
+            "Teen Titans",
+            "Dexters Lab",
+            "Powerpuff Girls",
+            "Courage",
+            "Kim Possible",
+            "Thats So Raven",
+            "Regular Show",
+            "Adventure Time",
+            "Samurai Jack",
+            "Futurama",
+            "Family Guy",
+            "SpongeBob",
+            "Yu-Gi-Oh!",
+            "Pokémon",
+            "The Boondocks"
+          ]
+        }
+      ]
+    },
+    {
       "id": "movies",
       "name": "Movies 🎬",
       "icon": "🎬",
       "boards": [
         {
-          "name": "Popcorn Night",
+          "name": "Box Office Hits",
           "clues16": [
-            "Sequel",
-            "Plot twist",
-            "Soundtrack",
-            "Villain",
-            "Hero",
-            "Romance",
-            "Explosion",
-            "Chase",
-            "Dialogue",
-            "Credits",
-            "Oscar",
-            "Comedy",
-            "Horror",
-            "Sci‑fi",
-            "Trailer",
-            "Cameo"
+            "Avengers",
+            "Inception",
+            "The Dark Knight",
+            "Interstellar",
+            "Get Out",
+            "Avatar",
+            "John Wick",
+            "Spider-Verse",
+            "Black Panther",
+            "The Hangover",
+            "Fast & Furious",
+            "Joker",
+            "Matrix",
+            "Shrek",
+            "Toy Story",
+            "Gladiator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vehicles",
+      "name": "Vehicles 🚗",
+      "icon": "🚗",
+      "boards": [
+        {
+          "name": "Garage",
+          "clues16": [
+            "Sedan",
+            "SUV",
+            "Pickup",
+            "Motorcycle",
+            "Supercar",
+            "Electric",
+            "Hybrid",
+            "Convertible",
+            "Coupe",
+            "Off-road",
+            "Luxury",
+            "Sports",
+            "Manual",
+            "Automatic",
+            "Rims",
+            "Spoiler"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brands",
+      "name": "Brands 🏷️",
+      "icon": "🏷️",
+      "boards": [
+        {
+          "name": "Name Recognition",
+          "clues16": [
+            "Nike",
+            "Adidas",
+            "Apple",
+            "Samsung",
+            "Google",
+            "Amazon",
+            "Microsoft",
+            "PlayStation",
+            "Xbox",
+            "Jordan",
+            "Coca-Cola",
+            "Pepsi",
+            "McDonalds",
+            "Netflix",
+            "Spotify",
+            "Supreme"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "professions",
+      "name": "Professions 💼",
+      "icon": "💼",
+      "boards": [
+        {
+          "name": "Career Day",
+          "clues16": [
+            "Doctor",
+            "Nurse",
+            "Teacher",
+            "Engineer",
+            "Programmer",
+            "Designer",
+            "Artist",
+            "Lawyer",
+            "Detective",
+            "Chef",
+            "Mechanic",
+            "Electrician",
+            "Streamer",
+            "Influencer",
+            "Athlete",
+            "Entrepreneur"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sports",
+      "name": "Sports 🏀",
+      "icon": "🏀",
+      "boards": [
+        {
+          "name": "Game Night",
+          "clues16": [
+            "Basketball",
+            "Football",
+            "Baseball",
+            "Soccer",
+            "LeBron",
+            "Jordan",
+            "Kobe",
+            "NFL",
+            "NBA",
+            "Yankees",
+            "Lakers",
+            "Warriors",
+            "Patriots",
+            "World Cup",
+            "Super Bowl",
+            "MVP"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "objects",
+      "name": "Objects 📦",
+      "icon": "📦",
+      "boards": [
+        {
+          "name": "Everyday Items",
+          "clues16": [
+            "Phone",
+            "Keys",
+            "Wallet",
+            "Remote",
+            "Backpack",
+            "Headphones",
+            "Laptop",
+            "Bottle",
+            "Chair",
+            "Table",
+            "Mirror",
+            "Clock",
+            "Notebook",
+            "Charger",
+            "Glasses",
+            "Umbrella"
           ]
         }
       ]
@@ -34,56 +426,55 @@
       "icon": "🍔",
       "boards": [
         {
-          "name": "Kitchen Chaos",
+          "name": "Late Night Eats",
           "clues16": [
-            "Spicy",
-            "Crunchy",
-            "Savory",
-            "Sweet",
-            "Sour",
-            "Umami",
-            "Grilled",
-            "Fried",
-            "Baked",
-            "Sauce",
-            "Cheesy",
-            "Fresh",
-            "Comfort",
-            "Street",
-            "Dessert",
-            "Snack"
+            "Pizza",
+            "Burger",
+            "Tacos",
+            "Pasta",
+            "Fried chicken",
+            "Fries",
+            "Ramen",
+            "Sushi",
+            "Steak",
+            "Ice cream",
+            "Donuts",
+            "Wings",
+            "Sandwich",
+            "BBQ",
+            "Rice",
+            "Dessert"
           ]
         }
       ]
     },
     {
-      "id": "travel",
-      "name": "Travel ✈️",
-      "icon": "✈️",
+      "id": "videogames",
+      "name": "Video Games 🎮",
+      "icon": "🎮",
       "boards": [
         {
-          "name": "Airport Mode",
+          "name": "Press Start",
           "clues16": [
-            "Passport",
-            "Gate",
-            "Carry‑on",
-            "Window seat",
-            "Jet lag",
-            "Souvenir",
-            "Map",
-            "Hotel",
-            "Beach",
-            "Mountain",
-            "Museum",
-            "Tour",
-            "Currency",
-            "Customs",
-            "Postcard",
-            "Detour"
+            "GTA",
+            "Call of Duty",
+            "Battlefield",
+            "CSGO",
+            "League of Legends",
+            "Fortnite",
+            "Minecraft",
+            "Halo",
+            "Mario Kart",
+            "Smash Bros",
+            "Need for Speed",
+            "God of War",
+            "Resident Evil",
+            "Final Fantasy",
+            "Valorant",
+            "Apex Legends"
           ]
         }
       ]
     }
   ]
 }
-
