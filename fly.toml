@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for thefraud on 2026-01-14T02:46:24Z
+# fly.toml app configuration file generated for thefraud-live on 2026-01-14T03:24:58Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'thefraud'
+app = 'thefraud-live'
 primary_region = 'iad'
 
 [build]
