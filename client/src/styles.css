@@ -431,6 +431,7 @@ textarea {
   gap: 6px;
   max-height: 280px;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 .chatMsg {
@@ -438,6 +439,9 @@ textarea {
   border-radius: 8px;
   background: rgba(30, 41, 59, 0.4); /* slate-800/40 */
   border: 1px solid var(--border);
+  max-width: 100%;
+  overflow-wrap: anywhere; /* breaks long URLs/strings */
+  word-break: break-word;
 }
 
 .chatMeta {
