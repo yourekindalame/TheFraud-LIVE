@@ -508,6 +508,8 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
       setRoleRevealState("hidden");
       setRoleRevealCountdown(3);
       setStepACountdown(3);
+      // Clear any previous round's unsent/sent clue draft from the input.
+      setClueDraft("");
     }
   }, [started?.roundId]);
 
