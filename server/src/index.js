@@ -19,6 +19,8 @@ const {
   removePlayer,
   safeMessage,
   startGameRound,
+  advanceClueTurn,
+  getCurrentClueTurnPlayerId,
   computeVoteState,
   resolveVoting,
   applyScoringAfterVote,
@@ -692,6 +694,13 @@ io.on("connection", (socket) => {
       if (typeof ack === "function") ack({ ok: false, error: "Not in clues phase." });
       return;
     }
+
+    const turnPlayerId = getCurrentClueTurnPlayerId(lobby);
+    if (turnPlayerId && membership.playerId !== turnPlayerId) {
+      emitError(socket, "NOT_YOUR_TURN", "It's not your turn to submit a clue yet.");
+      if (typeof ack === "function") ack({ ok: false, error: "Not your turn." });
+      return;
+    }
     const clue = safeMessage(payload?.clue);
     if (!clue) {
       if (typeof ack === "function") ack({ ok: false, error: "Empty clue." });
@@ -702,6 +711,14 @@ io.on("connection", (socket) => {
       lobby.gameState.cluesByPlayerId = {};
     }
     lobby.gameState.cluesByPlayerId[membership.playerId] = clue.trim();
+
+    // Track who actually submitted first for next-round rotation.
+    if (!lobby.lastFirstClueSubmitterId) {
+      lobby.lastFirstClueSubmitterId = membership.playerId;
+    }
+
+    // Advance to next eligible player.
+    advanceClueTurn(lobby);
     // Broadcast updated state so player sees their saved clue
     emitLobbyState(lobby);
     if (typeof ack === "function") ack({ ok: true });

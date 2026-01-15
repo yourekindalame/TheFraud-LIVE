@@ -42,6 +42,70 @@ function pickRandom(arr) {
   return arr[randomInt(arr.length)];
 }
 
+function pickRandomIndex(len) {
+  if (!Number.isFinite(len) || len <= 0) return 0;
+  return randomInt(len);
+}
+
+function buildClueOrder({ activePlayerIds, fraudIdSet, lastFirstClueSubmitterId }) {
+  const ids = shuffle(activePlayerIds || []);
+  if (ids.length <= 1) {
+    return { order: ids, firstId: ids[0] || null };
+  }
+
+  // Avoid the same person going first across consecutive rounds (based on who actually submitted first).
+  if (lastFirstClueSubmitterId && ids[0] === lastFirstClueSubmitterId) {
+    const candidates = [];
+    for (let i = 1; i < ids.length; i++) {
+      if (ids[i] !== lastFirstClueSubmitterId) candidates.push(i);
+    }
+    if (candidates.length) {
+      const swapIdx = candidates[pickRandomIndex(candidates.length)];
+      [ids[0], ids[swapIdx]] = [ids[swapIdx], ids[0]];
+    }
+  }
+
+  // Ensure the first clue prompter is not a fraud (if possible).
+  if (fraudIdSet && fraudIdSet.has(ids[0])) {
+    const nonFraudIndices = [];
+    for (let i = 1; i < ids.length; i++) {
+      if (!fraudIdSet.has(ids[i])) nonFraudIndices.push(i);
+    }
+    if (nonFraudIndices.length) {
+      const swapIdx = nonFraudIndices[pickRandomIndex(nonFraudIndices.length)];
+      [ids[0], ids[swapIdx]] = [ids[swapIdx], ids[0]];
+    }
+  }
+
+  return { order: ids, firstId: ids[0] || null };
+}
+
+function getCurrentClueTurnPlayerId(lobby) {
+  if (!lobby?.gameState) return null;
+  const order = lobby.gameState.clueOrderPlayerIds || [];
+  const idx = Number(lobby.gameState.clueTurnIndex || 0);
+  return order[idx] || null;
+}
+
+function advanceClueTurn(lobby) {
+  if (!lobby?.gameState) return null;
+  const order = lobby.gameState.clueOrderPlayerIds || [];
+  let idx = Number(lobby.gameState.clueTurnIndex || 0);
+  const cluesByPlayerId = lobby.gameState.cluesByPlayerId || {};
+
+  // Skip players who already submitted, are disconnected, or are pending.
+  while (idx < order.length) {
+    const pid = order[idx];
+    const p = lobby.players.find((pl) => pl.id === pid);
+    const eligible = p && p.connected && !p.pending && !cluesByPlayerId[pid];
+    if (eligible) break;
+    idx += 1;
+  }
+
+  lobby.gameState.clueTurnIndex = idx;
+  return getCurrentClueTurnPlayerId(lobby);
+}
+
 function readBannedWords() {
   const filePath = path.join(__dirname, "..", "data", "banned-words.txt");
   const raw = fs.readFileSync(filePath, "utf8");
@@ -120,7 +184,8 @@ function publicLobbyState(lobby, requestingPlayerId) {
       phase: currentPhase,
       roundId: lobby.gameState?.roundId || null,
       categoryName: lobby.gameState?.categoryName || null,
-      cluesByPlayerId: Object.keys(cluesByPlayerId).length > 0 ? cluesByPlayerId : undefined
+      cluesByPlayerId: Object.keys(cluesByPlayerId).length > 0 ? cluesByPlayerId : undefined,
+      clueTurnPlayerId: lobby.gameState?.phase === "clues" ? getCurrentClueTurnPlayerId(lobby) : null
     }
   };
 }
@@ -201,6 +266,14 @@ function startGameRound(lobby) {
   const clueBoard16 = board.clues16;
   const secretIndex = randomInt(16);
   const fraudIds = chooseFrauds(lobby);
+  const fraudIdSet = new Set([...fraudIds]);
+
+  const activePlayerIds = lobby.players.filter((p) => p.connected && !p.pending).map((p) => p.id);
+  const { order: clueOrderPlayerIds } = buildClueOrder({
+    activePlayerIds,
+    fraudIdSet,
+    lastFirstClueSubmitterId: lobby.lastFirstClueSubmitterId || null
+  });
 
   lobby.gameState = {
     phase: "clues",
@@ -213,9 +286,12 @@ function startGameRound(lobby) {
     votesByVoterId: {},
     voteToStartVoterIds: new Set(),
     lastVoteResult: null,
-    cluesByPlayerId: {}
+    cluesByPlayerId: {},
+    clueOrderPlayerIds,
+    clueTurnIndex: 0
   };
 
+  advanceClueTurn(lobby);
   return lobby.gameState;
 }
 
@@ -313,6 +389,7 @@ function createLobby({ lobbyName, isPrivate, settingsDefaults }) {
       isPrivate: Boolean(isPrivate), // Private = not shown in public list
       passcodeHash: null, // No longer used
       hostPlayerId: null,
+      lastFirstClueSubmitterId: null,
       settings,
       players: [],
       gameState: {
@@ -397,6 +474,8 @@ module.exports = {
   safeMessage,
   safeName,
   startGameRound,
+  advanceClueTurn,
+  getCurrentClueTurnPlayerId,
   computeVoteState,
   resolveVoting,
   applyScoringAfterVote,
