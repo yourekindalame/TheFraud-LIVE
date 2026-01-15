@@ -1046,12 +1046,14 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
       {fraudGuessResult && (
         <div className="panel panelPad" style={{ background: "rgba(255,255,255,0.04)" }}>
           <div style={{ fontWeight: 900, fontSize: 20, marginBottom: 12 }}>
-            {fraudGuessResult.isCorrect ? "✅ The Fraud Guessed Correctly!" : "❌ The Fraud Guessed Incorrectly"}
+            {fraudGuessResult.isCorrect
+              ? `✅ ${(fraudNames.length ? fraudNames.join(", ") : "The Fraud")} guessed correctly!`
+              : `❌ ${(fraudNames.length ? fraudNames.join(", ") : "The Fraud")} guessed incorrectly`}
           </div>
           <div className="muted" style={{ marginBottom: 8 }}>
             {fraudGuessResult.guessIndex !== null
-              ? `The Fraud guessed: "${clueBoard16[fraudGuessResult.guessIndex]}"`
-              : "The Fraud did not guess"}
+              ? `${fraudNames.length ? fraudNames.join(", ") : "The Fraud"} guessed: "${clueBoard16[fraudGuessResult.guessIndex]}"`
+              : `${fraudNames.length ? fraudNames.join(", ") : "The Fraud"} did not guess`}
           </div>
           <div className="muted" style={{ marginBottom: 16 }}>
             The secret word was: <strong>{clueBoard16[fraudGuessResult.secretIndex]}</strong>
