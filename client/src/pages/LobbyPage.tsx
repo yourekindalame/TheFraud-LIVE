@@ -210,8 +210,8 @@ function ChatPanel({ lobbyId, players }: { lobbyId: string; players: PlayerPubli
                       src={playerProfileImage}
                       alt={m.fromName}
                       style={{
-                        width: 24,
-                        height: 24,
+                        width: 32,
+                        height: 32,
                         borderRadius: "50%",
                         objectFit: "cover",
                         border: "1px solid var(--border)"
@@ -220,8 +220,8 @@ function ChatPanel({ lobbyId, players }: { lobbyId: string; players: PlayerPubli
                   ) : (
                     <div
                       style={{
-                        width: 24,
-                        height: 24,
+                        width: 32,
+                        height: 32,
                         borderRadius: "50%",
                         background: "var(--accent)",
                         display: "flex",
@@ -231,7 +231,7 @@ function ChatPanel({ lobbyId, players }: { lobbyId: string; players: PlayerPubli
                         flexShrink: 0
                       }}
                     >
-                      <span style={{ color: "white", fontWeight: 700, fontSize: 12 }}>
+                      <span style={{ color: "white", fontWeight: 700, fontSize: 14 }}>
                         {m.fromName.charAt(0).toUpperCase()}
                       </span>
                     </div>
