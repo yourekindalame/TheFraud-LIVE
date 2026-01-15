@@ -210,8 +210,8 @@ function ChatPanel({ lobbyId, players }: { lobbyId: string; players: PlayerPubli
                       src={playerProfileImage}
                       alt={m.fromName}
                       style={{
-                        width: 24,
-                        height: 24,
+                        width: 32,
+                        height: 32,
                         borderRadius: "50%",
                         objectFit: "cover",
                         border: "1px solid var(--border)"
@@ -220,8 +220,8 @@ function ChatPanel({ lobbyId, players }: { lobbyId: string; players: PlayerPubli
                   ) : (
                     <div
                       style={{
-                        width: 24,
-                        height: 24,
+                        width: 32,
+                        height: 32,
                         borderRadius: "50%",
                         background: "var(--accent)",
                         display: "flex",
@@ -231,7 +231,7 @@ function ChatPanel({ lobbyId, players }: { lobbyId: string; players: PlayerPubli
                         flexShrink: 0
                       }}
                     >
-                      <span style={{ color: "white", fontWeight: 700, fontSize: 12 }}>
+                      <span style={{ color: "white", fontWeight: 700, fontSize: 14 }}>
                         {m.fromName.charAt(0).toUpperCase()}
                       </span>
                     </div>
@@ -280,6 +280,7 @@ function LobbySetup({ lobbyId, isHost, players }: { lobbyId: string; isHost: boo
   const [anonymousVoting, setAnonymousVoting] = useState<boolean>(store.lobbyState?.settings.anonymousVoting || false);
   const selectedCategories = store.lobbyState?.settings.categories || ["movies"];
   const customCategories = store.lobbyState?.settings.customCategories || [];
+  const allCategoryIds = [...store.categories.map((c) => c.id), ...customCategories.map((c) => c.id)];
 
   useEffect(() => {
     setImposterCount(store.lobbyState?.settings.imposterCount || 1);
@@ -290,7 +291,36 @@ function LobbySetup({ lobbyId, isHost, players }: { lobbyId: string; isHost: boo
   return (
     <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
       <div className="panel panelPad" style={{ background: "rgba(255,255,255,0.04)" }}>
-        <div style={{ fontWeight: 900, fontSize: 20, marginBottom: 12 }}>Categories</div>
+        <div className="row" style={{ justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ fontWeight: 900, fontSize: 20 }}>Categories</div>
+          {isHost && (
+            <div className="row" style={{ gap: 8 }}>
+              <button
+                className="btn"
+                style={{ padding: "6px 10px", borderRadius: 999, minHeight: 0, fontSize: 12 }}
+                disabled={allCategoryIds.length === 0}
+                onClick={() => {
+                  if (allCategoryIds.length === 0) return;
+                  socket.emit("SETTINGS_UPDATE", { lobbyId, partialSettings: { categories: allCategoryIds } });
+                }}
+              >
+                Select all
+              </button>
+              <button
+                className="btn"
+                style={{ padding: "6px 10px", borderRadius: 999, minHeight: 0, fontSize: 12 }}
+                disabled={allCategoryIds.length === 0}
+                onClick={() => {
+                  if (allCategoryIds.length === 0) return;
+                  const fallback = allCategoryIds.includes("movies") ? "movies" : allCategoryIds[0];
+                  socket.emit("SETTINGS_UPDATE", { lobbyId, partialSettings: { categories: [fallback] } });
+                }}
+              >
+                Unselect all
+              </button>
+            </div>
+          )}
+        </div>
         <div className="muted" style={{ marginBottom: 16 }}>
           Select multiple categories (at least 1 required). Game randomly selects one each round.
         </div>
@@ -1046,12 +1076,14 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
       {fraudGuessResult && (
         <div className="panel panelPad" style={{ background: "rgba(255,255,255,0.04)" }}>
           <div style={{ fontWeight: 900, fontSize: 20, marginBottom: 12 }}>
-            {fraudGuessResult.isCorrect ? "✅ The Fraud Guessed Correctly!" : "❌ The Fraud Guessed Incorrectly"}
+            {fraudGuessResult.isCorrect
+              ? `✅ ${(fraudNames.length ? fraudNames.join(", ") : "The Fraud")} guessed correctly!`
+              : `❌ ${(fraudNames.length ? fraudNames.join(", ") : "The Fraud")} guessed incorrectly`}
           </div>
           <div className="muted" style={{ marginBottom: 8 }}>
             {fraudGuessResult.guessIndex !== null
-              ? `The Fraud guessed: "${clueBoard16[fraudGuessResult.guessIndex]}"`
-              : "The Fraud did not guess"}
+              ? `${fraudNames.length ? fraudNames.join(", ") : "The Fraud"} guessed: "${clueBoard16[fraudGuessResult.guessIndex]}"`
+              : `${fraudNames.length ? fraudNames.join(", ") : "The Fraud"} did not guess`}
           </div>
           <div className="muted" style={{ marginBottom: 16 }}>
             The secret word was: <strong>{clueBoard16[fraudGuessResult.secretIndex]}</strong>
