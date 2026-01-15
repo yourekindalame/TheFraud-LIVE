@@ -19,6 +19,8 @@ const {
   removePlayer,
   safeMessage,
   startGameRound,
+  advanceClueTurn,
+  getCurrentClueTurnPlayerId,
   computeVoteState,
   resolveVoting,
   applyScoringAfterVote,
@@ -499,7 +501,12 @@ io.on("connection", (socket) => {
     // Prefer persisted avatar on disk (Fly volume), fallback to client-provided value.
     const storedAvatarUrl = getAvatarUrlForPlayerId(clientPlayerId);
     const effectiveProfileImage = storedAvatarUrl || profileImage;
-    const added = addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId: socket.id, profileImage: effectiveProfileImage });
+
+    const isRoundActive = Boolean(lobby.gameState && lobby.gameState.phase && lobby.gameState.phase !== "lobby");
+    const alreadyInLobby = lobby.players.some((p) => p.id === String(clientPlayerId));
+    const pending = isRoundActive && !alreadyInLobby;
+
+    const added = addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId: socket.id, profileImage: effectiveProfileImage, pending });
     if (!added.ok) {
       emitError(socket, "BAD_JOIN", added.error);
       if (typeof ack === "function") ack({ ok: false, error: added.error });
@@ -676,9 +683,22 @@ io.on("connection", (socket) => {
     const ctx = requireMembership(socket);
     if (!ctx) return;
     const { lobby, membership } = ctx;
+    const player = lobby.players.find((p) => p.id === membership.playerId);
+    if (player?.pending) {
+      emitError(socket, "WAITING_NEXT_ROUND", "You joined mid-round. You'll be able to play next round.");
+      if (typeof ack === "function") ack({ ok: false, error: "Waiting for next round." });
+      return;
+    }
     if (lobby.gameState.phase !== "clues") {
       emitError(socket, "NOT_CLUES_PHASE", "Clue submission is only allowed during clues phase.");
       if (typeof ack === "function") ack({ ok: false, error: "Not in clues phase." });
+      return;
+    }
+
+    const turnPlayerId = getCurrentClueTurnPlayerId(lobby);
+    if (turnPlayerId && membership.playerId !== turnPlayerId) {
+      emitError(socket, "NOT_YOUR_TURN", "It's not your turn to submit a clue yet.");
+      if (typeof ack === "function") ack({ ok: false, error: "Not your turn." });
       return;
     }
     const clue = safeMessage(payload?.clue);
@@ -691,6 +711,14 @@ io.on("connection", (socket) => {
       lobby.gameState.cluesByPlayerId = {};
     }
     lobby.gameState.cluesByPlayerId[membership.playerId] = clue.trim();
+
+    // Track who actually submitted first for next-round rotation.
+    if (!lobby.lastFirstClueSubmitterId) {
+      lobby.lastFirstClueSubmitterId = membership.playerId;
+    }
+
+    // Advance to next eligible player.
+    advanceClueTurn(lobby);
     // Broadcast updated state so player sees their saved clue
     emitLobbyState(lobby);
     if (typeof ack === "function") ack({ ok: true });
@@ -700,6 +728,12 @@ io.on("connection", (socket) => {
     const ctx = requireMembership(socket);
     if (!ctx) return;
     const { lobby, membership } = ctx;
+    const player = lobby.players.find((p) => p.id === membership.playerId);
+    if (player?.pending) {
+      emitError(socket, "WAITING_NEXT_ROUND", "You joined mid-round. You'll be able to play next round.");
+      if (typeof ack === "function") ack({ ok: false, error: "Waiting for next round." });
+      return;
+    }
     if (lobby.gameState.phase !== "voting") {
       emitError(socket, "NOT_VOTING", "Voting is not active.");
       if (typeof ack === "function") ack({ ok: false, error: "Not voting." });
@@ -722,6 +756,12 @@ io.on("connection", (socket) => {
     const ctx = requireMembership(socket);
     if (!ctx) return;
     const { lobby, membership } = ctx;
+    const player = lobby.players.find((p) => p.id === membership.playerId);
+    if (player?.pending) {
+      emitError(socket, "WAITING_NEXT_ROUND", "You joined mid-round. You'll be able to play next round.");
+      if (typeof ack === "function") ack({ ok: false, error: "Waiting for next round." });
+      return;
+    }
     if (lobby.gameState.phase !== "clues") {
       emitError(socket, "BAD_PHASE", "Voting can only start after the round starts.");
       if (typeof ack === "function") ack({ ok: false, error: "Bad phase." });
@@ -737,7 +777,7 @@ io.on("connection", (socket) => {
     lobby.gameState.voteToStartVoterIds.add(membership.playerId);
     
     // Check if enough players voted (50% or more)
-    const connectedPlayers = lobby.players.filter((p) => p.connected);
+    const connectedPlayers = lobby.players.filter((p) => p.connected && !p.pending);
     const voteCount = lobby.gameState.voteToStartVoterIds.size;
     const requiredVotes = Math.ceil(connectedPlayers.length * 0.5);
     

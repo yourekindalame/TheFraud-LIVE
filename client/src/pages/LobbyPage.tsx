@@ -442,7 +442,11 @@ function LobbySetup({ lobbyId, isHost, players }: { lobbyId: string; isHost: boo
                     }
                   }}
                 >
-                  <strong>{p.name}</strong> <span className="muted">· {p.connected ? "online" : "offline"}</span>
+                  <strong>{p.name}</strong>{" "}
+                  <span className="muted">
+                    · {p.connected ? "online" : "offline"}
+                    {p.pending ? " · waiting" : ""}
+                  </span>
                 </div>
                 <div className="muted" style={{ fontSize: 12 }}>
                   {formatTime(p.joinedAt)}
@@ -468,6 +472,7 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
   const { store } = useApp();
   const socket = useMemo(() => getSocket(), []);
   const phase = store.lobbyState?.gameState?.phase || "clues";
+  const voteReveal = store.voteReveal?.lobbyId === lobbyId ? store.voteReveal : null;
 
   const started = store.gameStarted;
   const [fraudGuessIndex, setFraudGuessIndex] = useState<number | null>(null);
@@ -485,8 +490,17 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
   const clueBoard16 = started?.clueBoard16 || Array.from({ length: 16 }).map((_, i) => `Clue ${i + 1}`);
 
   const me = players.find((p) => p.id === store.clientPlayerId);
+  const mePending = Boolean(me?.pending);
   const votedFor = store.voteState?.votesByVoterId?.[store.clientPlayerId] || "";
   const anonymousVoting = store.lobbyState?.settings.anonymousVoting || false;
+  const fraudNames = voteReveal
+    ? voteReveal.fraudIds
+        .map((id) => players.find((p) => p.id === id)?.name || id)
+        .filter(Boolean)
+    : [];
+  const eliminatedName = voteReveal?.resultsSummary.eliminatedPlayerId
+    ? players.find((p) => p.id === voteReveal.resultsSummary.eliminatedPlayerId)?.name || voteReveal.resultsSummary.eliminatedPlayerId
+    : null;
 
   // Reset role reveal when round changes
   useEffect(() => {
@@ -494,6 +508,8 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
       setRoleRevealState("hidden");
       setRoleRevealCountdown(3);
       setStepACountdown(3);
+      // Clear any previous round's unsent/sent clue draft from the input.
+      setClueDraft("");
     }
   }, [started?.roundId]);
 
@@ -590,6 +606,21 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
     }
   }, [roleRevealState, roleRevealCountdown]);
 
+  const waitingMidRound = mePending && phase !== "lobby";
+
+  if (waitingMidRound) {
+    return (
+      <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className="panel panelPad" style={{ background: "rgba(255,255,255,0.04)" }}>
+          <div style={{ fontWeight: 900, fontSize: 20, marginBottom: 10 }}>Waiting for next round…</div>
+          <div className="muted">
+            You joined while a round was already in progress. You’ll be able to play (get a role, submit clues, and vote) when the next round starts.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Show role reveal Step A: "Ready to see your role?" with automatic countdown
   if (started && roleRevealState === "hidden") {
     return (
@@ -658,6 +689,28 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
 
   return (
     <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
+      {phase === "fraud_guess" && voteReveal && (
+        <div className="panel panelPad" style={{ background: "rgba(255,255,255,0.04)" }}>
+          <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 8 }}>Voting result</div>
+          <div className="muted" style={{ marginBottom: 8 }}>
+            {voteReveal.resultsSummary.fraudEliminated
+              ? `Detectives voted correctly${eliminatedName ? ` and eliminated ${eliminatedName}.` : "."}`
+              : eliminatedName
+                ? `Detectives voted incorrectly and eliminated ${eliminatedName}.`
+                : "No one was eliminated."}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <span className="pill">
+              <span className="muted">Fraud:</span>{" "}
+              <strong>{fraudNames.length ? fraudNames.join(", ") : "—"}</strong>
+            </span>
+            <span className="pill">
+              <span className="muted">Summary:</span> <strong>{voteReveal.resultsSummary.summary}</strong>
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="panel panelPad" style={{ background: "rgba(255,255,255,0.04)" }}>
         <div className="row" style={{ justifyContent: "space-between" }}>
           <div>
@@ -717,6 +770,12 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
             <div className="muted" style={{ marginBottom: 16, fontSize: 14 }}>
               Write a one-word clue to help identify the secret word
             </div>
+            {store.lobbyState?.gameState?.clueTurnPlayerId && store.lobbyState?.gameState?.clueTurnPlayerId !== store.clientPlayerId && (
+              <div className="muted" style={{ marginBottom: 10, fontSize: 13 }}>
+                Waiting for{" "}
+                <strong>{players.find((p) => p.id === store.lobbyState?.gameState?.clueTurnPlayerId)?.name || "another player"}</strong> to submit their clue…
+              </div>
+            )}
             <div className="row" style={{ gap: 8 }}>
               <input
                 className="input"
@@ -725,10 +784,14 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
                 onChange={(e) => setClueDraft(e.target.value.trim().split(/\s+/)[0] || "")}
                 placeholder="One word clue"
                 maxLength={20}
+                disabled={Boolean(store.lobbyState?.gameState?.clueTurnPlayerId) && store.lobbyState?.gameState?.clueTurnPlayerId !== store.clientPlayerId}
               />
               <button
                 className="btn btnPrimary"
-                disabled={!clueDraft.trim() && !store.lobbyState?.gameState?.cluesByPlayerId?.[store.clientPlayerId]}
+                disabled={
+                  (Boolean(store.lobbyState?.gameState?.clueTurnPlayerId) && store.lobbyState?.gameState?.clueTurnPlayerId !== store.clientPlayerId) ||
+                  (!clueDraft.trim() && !store.lobbyState?.gameState?.cluesByPlayerId?.[store.clientPlayerId])
+                }
                 onClick={() => {
                   const clueToSubmit = clueDraft.trim() || store.lobbyState?.gameState?.cluesByPlayerId?.[store.clientPlayerId] || "";
                   if (!clueToSubmit) return;
@@ -754,14 +817,21 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
               {players.map((p) => {
                 const playerClue = store.lobbyState?.gameState?.cluesByPlayerId?.[p.id];
                 const isCurrentPlayer = p.id === store.clientPlayerId;
+                const isTurn = store.lobbyState?.gameState?.clueTurnPlayerId === p.id;
                 return (
                   <div
                     key={p.id}
                     style={{
                       padding: "12px 16px",
                       borderRadius: 8,
-                      background: isCurrentPlayer ? "rgba(168, 85, 247, 0.2)" : "rgba(30, 41, 59, 0.3)",
-                      border: `1px solid ${isCurrentPlayer ? "rgba(168, 85, 247, 0.4)" : "var(--border)"}`,
+                      background: isTurn
+                        ? "rgba(34, 211, 238, 0.12)"
+                        : isCurrentPlayer
+                          ? "rgba(168, 85, 247, 0.2)"
+                          : "rgba(30, 41, 59, 0.3)",
+                      border: `1px solid ${
+                        isTurn ? "rgba(34, 211, 238, 0.45)" : isCurrentPlayer ? "rgba(168, 85, 247, 0.4)" : "var(--border)"
+                      }`,
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center"
@@ -770,6 +840,7 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <strong>{p.name}</strong>
                       {isCurrentPlayer && <span className="muted" style={{ fontSize: 12 }}>(You)</span>}
+                      {isTurn && <span className="pill" style={{ padding: "2px 8px", fontSize: 12 }}>Their turn</span>}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {playerClue ? (
@@ -994,7 +1065,20 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
       {phase === "fraud_guess" && isDetective && !fraudGuessResult && (
         <div className="panel panelPad" style={{ background: "rgba(255,255,255,0.04)" }}>
           <div style={{ fontWeight: 900, fontSize: 20, marginBottom: 12 }}>Final Guess</div>
-          <div className="muted">Detectives wait while The Fraud makes their final guess…</div>
+          <div className="muted" style={{ marginBottom: 10 }}>
+            {voteReveal
+              ? voteReveal.resultsSummary.fraudEliminated
+                ? `Detectives voted correctly${eliminatedName ? ` and eliminated ${eliminatedName}.` : "."}`
+                : eliminatedName
+                  ? `Detectives voted incorrectly and eliminated ${eliminatedName}.`
+                  : "No one was eliminated."
+              : "Detectives wait while The Fraud makes their final guess…"}
+          </div>
+          {voteReveal && (
+            <div className="pill">
+              <span className="muted">Fraud:</span> <strong>{fraudNames.length ? fraudNames.join(", ") : "—"}</strong>
+            </div>
+          )}
         </div>
       )}
 

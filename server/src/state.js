@@ -2,6 +2,7 @@ const { nanoid, customAlphabet } = require("nanoid");
 const bcrypt = require("bcryptjs");
 const fs = require("node:fs");
 const path = require("node:path");
+const { randomInt } = require("node:crypto");
 
 const LOBBY_ID_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // no 0/O/1/I
 
@@ -30,14 +31,79 @@ function safeMessage(message) {
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randomInt(i + 1);
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
 
 function pickRandom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+  if (!arr || arr.length === 0) return undefined;
+  return arr[randomInt(arr.length)];
+}
+
+function pickRandomIndex(len) {
+  if (!Number.isFinite(len) || len <= 0) return 0;
+  return randomInt(len);
+}
+
+function buildClueOrder({ activePlayerIds, fraudIdSet, lastFirstClueSubmitterId }) {
+  const ids = shuffle(activePlayerIds || []);
+  if (ids.length <= 1) {
+    return { order: ids, firstId: ids[0] || null };
+  }
+
+  // Avoid the same person going first across consecutive rounds (based on who actually submitted first).
+  if (lastFirstClueSubmitterId && ids[0] === lastFirstClueSubmitterId) {
+    const candidates = [];
+    for (let i = 1; i < ids.length; i++) {
+      if (ids[i] !== lastFirstClueSubmitterId) candidates.push(i);
+    }
+    if (candidates.length) {
+      const swapIdx = candidates[pickRandomIndex(candidates.length)];
+      [ids[0], ids[swapIdx]] = [ids[swapIdx], ids[0]];
+    }
+  }
+
+  // Ensure the first clue prompter is not a fraud (if possible).
+  if (fraudIdSet && fraudIdSet.has(ids[0])) {
+    const nonFraudIndices = [];
+    for (let i = 1; i < ids.length; i++) {
+      if (!fraudIdSet.has(ids[i])) nonFraudIndices.push(i);
+    }
+    if (nonFraudIndices.length) {
+      const swapIdx = nonFraudIndices[pickRandomIndex(nonFraudIndices.length)];
+      [ids[0], ids[swapIdx]] = [ids[swapIdx], ids[0]];
+    }
+  }
+
+  return { order: ids, firstId: ids[0] || null };
+}
+
+function getCurrentClueTurnPlayerId(lobby) {
+  if (!lobby?.gameState) return null;
+  const order = lobby.gameState.clueOrderPlayerIds || [];
+  const idx = Number(lobby.gameState.clueTurnIndex || 0);
+  return order[idx] || null;
+}
+
+function advanceClueTurn(lobby) {
+  if (!lobby?.gameState) return null;
+  const order = lobby.gameState.clueOrderPlayerIds || [];
+  let idx = Number(lobby.gameState.clueTurnIndex || 0);
+  const cluesByPlayerId = lobby.gameState.cluesByPlayerId || {};
+
+  // Skip players who already submitted, are disconnected, or are pending.
+  while (idx < order.length) {
+    const pid = order[idx];
+    const p = lobby.players.find((pl) => pl.id === pid);
+    const eligible = p && p.connected && !p.pending && !cluesByPlayerId[pid];
+    if (eligible) break;
+    idx += 1;
+  }
+
+  lobby.gameState.clueTurnIndex = idx;
+  return getCurrentClueTurnPlayerId(lobby);
 }
 
 function readBannedWords() {
@@ -93,7 +159,8 @@ function publicPlayer(p) {
     points: p.points,
     joinedAt: p.joinedAt,
     connected: p.connected,
-    profileImage: p.profileImage || null
+    profileImage: p.profileImage || null,
+    pending: Boolean(p.pending)
   };
 }
 
@@ -117,7 +184,8 @@ function publicLobbyState(lobby, requestingPlayerId) {
       phase: currentPhase,
       roundId: lobby.gameState?.roundId || null,
       categoryName: lobby.gameState?.categoryName || null,
-      cluesByPlayerId: Object.keys(cluesByPlayerId).length > 0 ? cluesByPlayerId : undefined
+      cluesByPlayerId: Object.keys(cluesByPlayerId).length > 0 ? cluesByPlayerId : undefined,
+      clueTurnPlayerId: lobby.gameState?.phase === "clues" ? getCurrentClueTurnPlayerId(lobby) : null
     }
   };
 }
@@ -132,14 +200,14 @@ function ensureHostValid(lobby) {
 }
 
 function chooseFrauds(lobby) {
-  const connectedPlayers = lobby.players.filter((p) => p.connected);
+  const connectedPlayers = lobby.players.filter((p) => p.connected && !p.pending);
   const ids = connectedPlayers.map((p) => p.id);
   const shuffled = shuffle(ids);
 
   let count = clamp(Number(lobby.settings.imposterCount || 1), 1, Math.max(1, ids.length - 1));
   if (lobby.settings.randomizeImposterCount) {
     const max = Math.max(1, Math.min(3, ids.length - 1));
-    count = 1 + Math.floor(Math.random() * max);
+    count = 1 + randomInt(max);
   }
   return new Set(shuffled.slice(0, count));
 }
@@ -160,6 +228,11 @@ function getAllCategories() {
 }
 
 function startGameRound(lobby) {
+  // Players who joined mid-round become active at the start of the next round.
+  for (const p of lobby.players) {
+    p.pending = false;
+  }
+
   // Support multiple categories - randomly select one
   const selectedCategoryIds = lobby.settings.categories || [];
   if (selectedCategoryIds.length === 0) {
@@ -191,8 +264,16 @@ function startGameRound(lobby) {
   
   const board = pickRandom(category.boards);
   const clueBoard16 = board.clues16;
-  const secretIndex = Math.floor(Math.random() * 16);
+  const secretIndex = randomInt(16);
   const fraudIds = chooseFrauds(lobby);
+  const fraudIdSet = new Set([...fraudIds]);
+
+  const activePlayerIds = lobby.players.filter((p) => p.connected && !p.pending).map((p) => p.id);
+  const { order: clueOrderPlayerIds } = buildClueOrder({
+    activePlayerIds,
+    fraudIdSet,
+    lastFirstClueSubmitterId: lobby.lastFirstClueSubmitterId || null
+  });
 
   lobby.gameState = {
     phase: "clues",
@@ -205,9 +286,12 @@ function startGameRound(lobby) {
     votesByVoterId: {},
     voteToStartVoterIds: new Set(),
     lastVoteResult: null,
-    cluesByPlayerId: {}
+    cluesByPlayerId: {},
+    clueOrderPlayerIds,
+    clueTurnIndex: 0
   };
 
+  advanceClueTurn(lobby);
   return lobby.gameState;
 }
 
@@ -218,7 +302,7 @@ function computeVoteState(lobby) {
     if (!targetId) continue;
     voteCountsByTargetId[targetId] = (voteCountsByTargetId[targetId] || 0) + 1;
   }
-  const connectedIds = lobby.players.filter((p) => p.connected).map((p) => p.id);
+  const connectedIds = lobby.players.filter((p) => p.connected && !p.pending).map((p) => p.id);
   const allSubmittedBoolean = connectedIds.every((id) => Boolean(votesByVoterId[id]));
 
   return { votesByVoterId, voteCountsByTargetId, allSubmittedBoolean };
@@ -251,7 +335,7 @@ function applyScoringAfterVote(lobby, { eliminatedPlayerId, fraudEliminated }) {
   if (fraudEliminated) {
     // Detectives eliminate The Fraud: +1 point each (non-fraud connected)
     for (const p of lobby.players) {
-      if (!p.connected) continue;
+      if (!p.connected || p.pending) continue;
       if (fraudIds.has(p.id)) continue;
       p.points += 1;
     }
@@ -261,7 +345,7 @@ function applyScoringAfterVote(lobby, { eliminatedPlayerId, fraudEliminated }) {
   // Fraud survives a vote: +1 point each surviving fraud
   for (const fraudId of fraudIds) {
     const fp = playersById.get(fraudId);
-    if (fp && fp.connected) fp.points += 1;
+    if (fp && fp.connected && !fp.pending) fp.points += 1;
   }
   return { summary: "The Fraud survived the vote. +1 point for each Fraud.", fraudEliminated: false };
 }
@@ -305,6 +389,7 @@ function createLobby({ lobbyName, isPrivate, settingsDefaults }) {
       isPrivate: Boolean(isPrivate), // Private = not shown in public list
       passcodeHash: null, // No longer used
       hostPlayerId: null,
+      lastFirstClueSubmitterId: null,
       settings,
       players: [],
       gameState: {
@@ -324,7 +409,7 @@ function createLobby({ lobbyName, isPrivate, settingsDefaults }) {
   };
 }
 
-function addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId, profileImage }) {
+function addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId, profileImage, pending }) {
   const id = String(clientPlayerId || "").trim();
   if (!id) return { ok: false, error: "Missing clientPlayerId." };
   const name = safeName(playerName);
@@ -361,7 +446,8 @@ function addOrUpdatePlayer(lobby, { clientPlayerId, playerName, socketId, profil
     joinedAt: now(),
     connected: true,
     socketId,
-    profileImage: profileImageValue ?? null
+    profileImage: profileImageValue ?? null,
+    pending: Boolean(pending)
   };
   lobby.players.push(player);
   return { ok: true, player, isNew: true };
@@ -388,6 +474,8 @@ module.exports = {
   safeMessage,
   safeName,
   startGameRound,
+  advanceClueTurn,
+  getCurrentClueTurnPlayerId,
   computeVoteState,
   resolveVoting,
   applyScoringAfterVote,

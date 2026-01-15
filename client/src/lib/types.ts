@@ -12,6 +12,7 @@ export type PlayerPublic = {
   joinedAt: number;
   connected: boolean;
   profileImage?: string | null;
+  pending?: boolean;
 };
 
 export type LobbySettings = {
@@ -37,6 +38,7 @@ export type LobbyState = {
     roundId: string | null;
     categoryName: string | null;
     cluesByPlayerId?: Record<string, string>;
+    clueTurnPlayerId?: string | null;
   };
 };
 

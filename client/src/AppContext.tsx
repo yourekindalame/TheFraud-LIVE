@@ -19,6 +19,17 @@ export type VoteStatePayload = {
   voteToStartRequired?: number;
 };
 
+export type VoteRevealPayload = {
+  lobbyId: string;
+  fraudIds: string[];
+  resultsSummary: {
+    endedEarly: boolean;
+    eliminatedPlayerId: string | null;
+    fraudEliminated: boolean;
+    summary: string;
+  };
+};
+
 export type AppStore = {
   clientPlayerId: string;
   playerName: string | null;
@@ -28,6 +39,7 @@ export type AppStore = {
   lobbyState: LobbyState | null;
   gameStarted: GameStartedPayload | null;
   voteState: VoteStatePayload | null;
+  voteReveal: VoteRevealPayload | null;
   chat: ChatMessage[];
   leaderboard: LeaderboardEntry[];
   lastError: { code: string; message: string } | null;

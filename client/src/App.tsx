@@ -3,7 +3,7 @@ import { Link, Route, Routes, useNavigate } from "react-router-dom";
 import { getSocket } from "./lib/socket";
 import { getClientPlayerId, getPlayerName, getProfileImage, setPlayerName as persistName, setProfileImage as persistProfileImage } from "./lib/storage";
 import type { CategoryMeta, ChatMessage, LeaderboardEntry, LobbyState, LobbySummary } from "./lib/types";
-import { AppContext, type GameStartedPayload, type VoteStatePayload } from "./AppContext";
+import { AppContext, type GameStartedPayload, type VoteRevealPayload, type VoteStatePayload } from "./AppContext";
 import { RulesModal } from "./components/RulesModal";
 import { Modal } from "./components/Modal";
 import HomePage from "./pages/HomePage";
@@ -25,6 +25,7 @@ export default function App() {
   const [lobbyState, setLobbyState] = useState<LobbyState | null>(null);
   const [gameStarted, setGameStarted] = useState<GameStartedPayload | null>(null);
   const [voteState, setVoteState] = useState<VoteStatePayload | null>(null);
+  const [voteReveal, setVoteReveal] = useState<VoteRevealPayload | null>(null);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [lastError, setLastError] = useState<ServerError | null>(null);
@@ -33,7 +34,7 @@ export default function App() {
   const [nameDraft, setNameDraft] = useState(playerName || "");
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
-  const store = { clientPlayerId, playerName, profileImage, categories, lobbyList, lobbyState, gameStarted, voteState, chat, leaderboard, lastError };
+  const store = { clientPlayerId, playerName, profileImage, categories, lobbyList, lobbyState, gameStarted, voteState, voteReveal, chat, leaderboard, lastError };
   const actions = {
     setPlayerName: (name: string) => {
       const v = name.trim().slice(0, 24);
@@ -111,15 +112,18 @@ export default function App() {
       if (payload?.gameState?.phase === "lobby") {
         setGameStarted(null);
         setVoteState(null);
+        setVoteReveal(null);
       }
     };
     const onGameStarted = (payload: GameStartedPayload) => {
       setGameStarted(payload);
       setVoteState(null);
+      setVoteReveal(null);
       setChat([]);
       navigate(`/lobby/${payload.lobbyId}`);
     };
     const onVoteState = (payload: VoteStatePayload) => setVoteState(payload);
+    const onVoteReveal = (payload: VoteRevealPayload) => setVoteReveal(payload);
     const onChat = (payload: { lobbyId: string; messageObj: ChatMessage }) => setChat((c) => [...c, payload.messageObj]);
     const onScore = (payload: { lobbyId: string; leaderboard: LeaderboardEntry[] }) => setLeaderboard(payload.leaderboard || []);
     const onError = (payload: ServerError) => setLastError(payload);
@@ -128,6 +132,7 @@ export default function App() {
     socket.on("LOBBY_STATE", onLobbyState);
     socket.on("GAME_STARTED", onGameStarted);
     socket.on("VOTE_STATE", onVoteState);
+    socket.on("VOTE_REVEAL", onVoteReveal);
     socket.on("CHAT_MESSAGE", onChat);
     socket.on("SCORE_UPDATE", onScore);
     socket.on("ERROR", onError);
@@ -139,6 +144,7 @@ export default function App() {
       socket.off("LOBBY_STATE", onLobbyState);
       socket.off("GAME_STARTED", onGameStarted);
       socket.off("VOTE_STATE", onVoteState);
+      socket.off("VOTE_REVEAL", onVoteReveal);
       socket.off("CHAT_MESSAGE", onChat);
       socket.off("SCORE_UPDATE", onScore);
       socket.off("ERROR", onError);
