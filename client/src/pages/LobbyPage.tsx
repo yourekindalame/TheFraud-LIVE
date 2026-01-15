@@ -768,6 +768,12 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
             <div className="muted" style={{ marginBottom: 16, fontSize: 14 }}>
               Write a one-word clue to help identify the secret word
             </div>
+            {store.lobbyState?.gameState?.clueTurnPlayerId && store.lobbyState?.gameState?.clueTurnPlayerId !== store.clientPlayerId && (
+              <div className="muted" style={{ marginBottom: 10, fontSize: 13 }}>
+                Waiting for{" "}
+                <strong>{players.find((p) => p.id === store.lobbyState?.gameState?.clueTurnPlayerId)?.name || "another player"}</strong> to submit their clue…
+              </div>
+            )}
             <div className="row" style={{ gap: 8 }}>
               <input
                 className="input"
@@ -776,10 +782,14 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
                 onChange={(e) => setClueDraft(e.target.value.trim().split(/\s+/)[0] || "")}
                 placeholder="One word clue"
                 maxLength={20}
+                disabled={Boolean(store.lobbyState?.gameState?.clueTurnPlayerId) && store.lobbyState?.gameState?.clueTurnPlayerId !== store.clientPlayerId}
               />
               <button
                 className="btn btnPrimary"
-                disabled={!clueDraft.trim() && !store.lobbyState?.gameState?.cluesByPlayerId?.[store.clientPlayerId]}
+                disabled={
+                  (Boolean(store.lobbyState?.gameState?.clueTurnPlayerId) && store.lobbyState?.gameState?.clueTurnPlayerId !== store.clientPlayerId) ||
+                  (!clueDraft.trim() && !store.lobbyState?.gameState?.cluesByPlayerId?.[store.clientPlayerId])
+                }
                 onClick={() => {
                   const clueToSubmit = clueDraft.trim() || store.lobbyState?.gameState?.cluesByPlayerId?.[store.clientPlayerId] || "";
                   if (!clueToSubmit) return;
@@ -805,14 +815,21 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
               {players.map((p) => {
                 const playerClue = store.lobbyState?.gameState?.cluesByPlayerId?.[p.id];
                 const isCurrentPlayer = p.id === store.clientPlayerId;
+                const isTurn = store.lobbyState?.gameState?.clueTurnPlayerId === p.id;
                 return (
                   <div
                     key={p.id}
                     style={{
                       padding: "12px 16px",
                       borderRadius: 8,
-                      background: isCurrentPlayer ? "rgba(168, 85, 247, 0.2)" : "rgba(30, 41, 59, 0.3)",
-                      border: `1px solid ${isCurrentPlayer ? "rgba(168, 85, 247, 0.4)" : "var(--border)"}`,
+                      background: isTurn
+                        ? "rgba(34, 211, 238, 0.12)"
+                        : isCurrentPlayer
+                          ? "rgba(168, 85, 247, 0.2)"
+                          : "rgba(30, 41, 59, 0.3)",
+                      border: `1px solid ${
+                        isTurn ? "rgba(34, 211, 238, 0.45)" : isCurrentPlayer ? "rgba(168, 85, 247, 0.4)" : "var(--border)"
+                      }`,
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center"
@@ -821,6 +838,7 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <strong>{p.name}</strong>
                       {isCurrentPlayer && <span className="muted" style={{ fontSize: 12 }}>(You)</span>}
+                      {isTurn && <span className="pill" style={{ padding: "2px 8px", fontSize: 12 }}>Their turn</span>}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {playerClue ? (

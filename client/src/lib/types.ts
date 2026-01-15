@@ -38,6 +38,7 @@ export type LobbyState = {
     roundId: string | null;
     categoryName: string | null;
     cluesByPlayerId?: Record<string, string>;
+    clueTurnPlayerId?: string | null;
   };
 };
 
