@@ -12,6 +12,7 @@ export type PlayerPublic = {
   joinedAt: number;
   connected: boolean;
   profileImage?: string | null;
+  pending?: boolean;
 };
 
 export type LobbySettings = {

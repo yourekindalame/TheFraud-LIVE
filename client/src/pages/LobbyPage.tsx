@@ -442,7 +442,11 @@ function LobbySetup({ lobbyId, isHost, players }: { lobbyId: string; isHost: boo
                     }
                   }}
                 >
-                  <strong>{p.name}</strong> <span className="muted">· {p.connected ? "online" : "offline"}</span>
+                  <strong>{p.name}</strong>{" "}
+                  <span className="muted">
+                    · {p.connected ? "online" : "offline"}
+                    {p.pending ? " · waiting" : ""}
+                  </span>
                 </div>
                 <div className="muted" style={{ fontSize: 12 }}>
                   {formatTime(p.joinedAt)}
@@ -486,6 +490,7 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
   const clueBoard16 = started?.clueBoard16 || Array.from({ length: 16 }).map((_, i) => `Clue ${i + 1}`);
 
   const me = players.find((p) => p.id === store.clientPlayerId);
+  const mePending = Boolean(me?.pending);
   const votedFor = store.voteState?.votesByVoterId?.[store.clientPlayerId] || "";
   const anonymousVoting = store.lobbyState?.settings.anonymousVoting || false;
   const fraudNames = voteReveal
@@ -598,6 +603,21 @@ function GameView({ lobbyId, isHost, players }: { lobbyId: string; isHost: boole
       return () => clearTimeout(timer);
     }
   }, [roleRevealState, roleRevealCountdown]);
+
+  const waitingMidRound = mePending && phase !== "lobby";
+
+  if (waitingMidRound) {
+    return (
+      <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className="panel panelPad" style={{ background: "rgba(255,255,255,0.04)" }}>
+          <div style={{ fontWeight: 900, fontSize: 20, marginBottom: 10 }}>Waiting for next round…</div>
+          <div className="muted">
+            You joined while a round was already in progress. You’ll be able to play (get a role, submit clues, and vote) when the next round starts.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show role reveal Step A: "Ready to see your role?" with automatic countdown
   if (started && roleRevealState === "hidden") {
